@@ -185,3 +185,4 @@ process.on("SIGTERM", async () => {
 });
 
 export default router;
+export { authMiddleware };
