@@ -112,4 +112,63 @@ router.get("/posts", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandle
         res.status(500).json({ error: "Internal server error" });
     }
 })));
+router.post("/update", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { postId, content } = req.body;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const post = yield prisma.post.findUnique({
+        where: {
+            id: postId
+        }
+    });
+    if (!post) {
+        return res.status(404).send("Post not found");
+    }
+    if (post.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to update this post" });
+    }
+    const updatedPost = yield prisma.post.update({
+        where: {
+            id: postId
+        },
+        data: {
+            content
+        }
+    });
+    res.status(200).json({
+        message: "Post updated successfully",
+        post: updatedPost
+    });
+})));
+router.delete("/delete", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { postId } = req.body;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const post = yield prisma.post.findUnique({
+            where: {
+                id: postId
+            }
+        });
+        if (!post) {
+            return res.status(404).send("Post not found");
+        }
+        if (post.userId !== userId) {
+            return res.status(403).json({ message: "You do not have permission to delete this post" });
+        }
+        const deletedPost = yield prisma.post.delete({
+            where: {
+                id: postId
+            }
+        });
+        res.status(200).json({
+            message: "Post deleted successfully",
+            post: deletedPost
+        });
+    }
+    catch (error) {
+        console.error("error: ", Error);
+        return error;
+    }
+})));
 exports.default = router;
