@@ -63,4 +63,53 @@ router.post("/upload", auth_routes_1.authMiddleware, upload.single('file'), (0, 
         next(error);
     }
 })));
+router.get("/posts", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Authenticated user:", req.user);
+    try {
+        const posts = yield prisma.post.findMany({
+            select: {
+                id: true,
+                content: true,
+                imageUrl: true,
+                videourl: true,
+                createdAt: true,
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        likes: true,
+                    },
+                },
+                comments: {
+                    select: {
+                        id: true,
+                        content: true,
+                        createdAt: true,
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        console.log("Fetched posts count:", posts.length);
+        res.status(200).json(posts);
+    }
+    catch (error) {
+        console.error("Error fetching posts: ", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+})));
 exports.default = router;

@@ -70,4 +70,63 @@ router.post(
     })
 );
 
+router.get(
+    "/posts",
+    authMiddleware,
+    asyncHandler(async (req: Request, res: Response) => {
+      console.log("Authenticated user:", req.user); 
+      
+      try {
+        const posts = await prisma.post.findMany({
+          select: {
+            id: true,
+            content: true,
+            imageUrl: true,
+            videourl: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true, 
+              },
+            },
+            comments: {
+              select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+  
+        console.log("Fetched posts count:", posts.length); 
+        res.status(200).json(posts); 
+      } catch (error) {
+        console.error("Error fetching posts: ", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    })
+  );
+  
+  
+  
+  
+
 export default router;
