@@ -1,1 +1,1 @@
-{"root":["./server.ts","./middlewares/auth-middleware.ts","./src/routes/auth-routes.ts","./src/routes/comments.ts","./src/routes/count-routes.ts","./src/routes/post-routes.ts","./types/auth.d.ts"],"version":"5.6.2"}
+{"root":["./server.ts","./middlewares/auth-middleware.ts","./src/routes/auth-routes.ts","./src/routes/comments.ts","./src/routes/count-routes.ts","./src/routes/follow-routes.ts","./src/routes/post-routes.ts","./src/routes/usersearch-route.ts","./types/auth.d.ts"],"version":"5.6.2"}

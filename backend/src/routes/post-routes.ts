@@ -70,6 +70,58 @@ router.post(
     })
 );
 
+// Route to get posts created by the authenticated user
+router.get("/posts/me", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+      return res.status(400).json({ message: "User not authenticated." });
+  }
+
+  try {
+      const userPosts = await prisma.post.findMany({
+          where: {
+              userId: userId,
+          },
+          select: {
+              id: true,
+              content: true,
+              imageUrl: true,
+              videourl: true,
+              createdAt: true,
+              _count: {
+                  select: {
+                      likes: true,
+                  },
+              },
+              comments: {
+                  select: {
+                      id: true,
+                      content: true,
+                      createdAt: true,
+                      user: {
+                          select: {
+                              id: true,
+                              username: true,
+                              email: true,
+                          },
+                      },
+                  },
+              },
+          },
+          orderBy: {
+              createdAt: "desc",
+          },
+      });
+
+      res.status(200).json(userPosts);
+  } catch (error) {
+      console.error("Error fetching user posts:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+}));
+
+
 router.get(
     "/posts",
     authMiddleware,
@@ -188,6 +240,48 @@ router.delete("/delete",authMiddleware, asyncHandler(async(req: Request ,res: Re
  }
 }))
   
+
+router.post(
+  '/post/:postId/like-unlike',
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { postId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User not authenticated.' });
+    }
+
+    try {
+      const existingLike = await prisma.postLike.findFirst({
+        where: {
+          postId: postId,
+          userId: userId,
+        },
+      });
+
+      if (existingLike) {
+        await prisma.postLike.delete({
+          where: {
+            id: existingLike.id,
+          },
+        });
+        return res.status(200).json({ message: 'Post unliked.' });
+      } else {
+        await prisma.postLike.create({
+          data: {
+            postId: postId,
+            userId: userId,
+          },
+        });
+        return res.status(200).json({ message: 'Post liked.' });
+      }
+    } catch (error) {
+      console.error('Error liking/unliking post:', error);
+      return res.status(500).json({ message: 'Error processing request.' });
+    }
+  })
+);
   
 
 export default router;

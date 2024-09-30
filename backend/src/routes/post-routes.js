@@ -63,6 +63,55 @@ router.post("/upload", auth_routes_1.authMiddleware, upload.single('file'), (0, 
         next(error);
     }
 })));
+// Route to get posts created by the authenticated user
+router.get("/posts/me", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+        return res.status(400).json({ message: "User not authenticated." });
+    }
+    try {
+        const userPosts = yield prisma.post.findMany({
+            where: {
+                userId: userId,
+            },
+            select: {
+                id: true,
+                content: true,
+                imageUrl: true,
+                videourl: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        likes: true,
+                    },
+                },
+                comments: {
+                    select: {
+                        id: true,
+                        content: true,
+                        createdAt: true,
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        res.status(200).json(userPosts);
+    }
+    catch (error) {
+        console.error("Error fetching user posts:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+})));
 router.get("/posts", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("Authenticated user:", req.user);
     try {
@@ -169,6 +218,43 @@ router.delete("/delete", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHa
     catch (error) {
         console.error("error: ", Error);
         return error;
+    }
+})));
+router.post('/post/:postId/like-unlike', auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { postId } = req.params;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+        return res.status(400).json({ message: 'User not authenticated.' });
+    }
+    try {
+        const existingLike = yield prisma.postLike.findFirst({
+            where: {
+                postId: postId,
+                userId: userId,
+            },
+        });
+        if (existingLike) {
+            yield prisma.postLike.delete({
+                where: {
+                    id: existingLike.id,
+                },
+            });
+            return res.status(200).json({ message: 'Post unliked.' });
+        }
+        else {
+            yield prisma.postLike.create({
+                data: {
+                    postId: postId,
+                    userId: userId,
+                },
+            });
+            return res.status(200).json({ message: 'Post liked.' });
+        }
+    }
+    catch (error) {
+        console.error('Error liking/unliking post:', error);
+        return res.status(500).json({ message: 'Error processing request.' });
     }
 })));
 exports.default = router;

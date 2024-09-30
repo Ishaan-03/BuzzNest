@@ -8,33 +8,27 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  username  String   
-  email     String    @unique
+  id        String     @id @default(uuid())
+  username  String
+  email     String     @unique
   password  String
-  createdAt DateTime  @default(now())
-
-  // Relationships
-  posts      Post[]
-  comments   Comment[]
-  likes      PostLike[]
-  
-  // Self-referencing relationship for followers and following
-  followers  Follower[] @relation("Followers")
-  following  Follower[] @relation("Following")
+  createdAt DateTime   @default(now())
+  comments  Comment[]
+  following Follower[] @relation("Following")
+  followers Follower[] @relation("Followers")
+  posts     Post[]
+  likes     PostLike[]
 }
 
 model Post {
-  id        String    @id @default(uuid())
+  id        String     @id @default(uuid())
   content   String
-  imageUrl  String? 
-  videourl  String?  
-  createdAt DateTime  @default(now())
-
+  imageUrl  String?
+  videourl  String?
+  createdAt DateTime   @default(now())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  
   comments  Comment[]
+  user      User       @relation(fields: [userId], references: [id])
   likes     PostLike[]
 }
 
@@ -42,33 +36,28 @@ model Comment {
   id        String   @id @default(uuid())
   content   String
   createdAt DateTime @default(now())
-  
   postId    String
-  post      Post     @relation(fields: [postId], references: [id])
   userId    String
+  post      Post     @relation(fields: [postId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
 
 model PostLike {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
-  
   postId    String
-  post      Post     @relation(fields: [postId], references: [id])
   userId    String
+  post      Post     @relation(fields: [postId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
 
 model Follower {
-  id            String   @id @default(uuid())
-  createdAt     DateTime @default(now())
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  followerId  String
+  followingId String
+  follower    User     @relation("Following", fields: [followerId], references: [id])
+  following   User     @relation("Followers", fields: [followingId], references: [id])
 
-  followerId    String   // The user who is following
-  followingId   String   // The user being followed
-
-  follower      User     @relation("Following", fields: [followerId], references: [id])
-  following     User     @relation("Followers", fields: [followingId], references: [id])
-
-  // Unique constraint to avoid duplicate entries
   @@unique([followerId, followingId])
 }
