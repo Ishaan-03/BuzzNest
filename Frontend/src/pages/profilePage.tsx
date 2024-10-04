@@ -170,22 +170,45 @@ const ProfilePage: React.FC = () => {
 
   const handleLike = async (postId: string) => {
     try {
-      await api.post(`/like/${postId}`)
-      const updatedPosts = posts.map(post => 
-        post.id === postId 
-          ? { ...post, _count: { ...post._count, likes: post._count.likes + 1 }, liked: !post.liked }
+      await api.post(`/post/${postId}/like-unlike`);
+  
+      const updatedPosts = posts.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              _count: {
+                ...post._count,
+                likes: post.liked ? post._count.likes - 1 : post._count.likes + 1,
+              },
+              liked: !post.liked, 
+            }
           : post
-      )
-      setPosts(updatedPosts)
+      );
+      setPosts(updatedPosts);
+  
       if (selectedPost && selectedPost.id === postId) {
-        setSelectedPost({ ...selectedPost, _count: { ...selectedPost._count, likes: selectedPost._count.likes + 1 }, liked: !selectedPost.liked })
+        setSelectedPost({
+          ...selectedPost,
+          _count: {
+            ...selectedPost._count,
+            likes: selectedPost.liked
+              ? selectedPost._count.likes - 1
+              : selectedPost._count.likes + 1,
+          },
+          liked: !selectedPost.liked, 
+        });
       }
-      toast.success(selectedPost?.liked ? 'Post unliked successfully' : 'Post liked successfully')
+  
+      const updatedPost = updatedPosts.find(post => post.id === postId);
+      if (updatedPost) {
+        toast.success(updatedPost.liked ? "Post liked successfully" : "Post unliked successfully");
+      }
     } catch (error) {
-      console.error('Error liking/unliking post:', error)
-      toast.error('Failed to like/unlike post')
+      console.error("Error liking/unliking post:", error);
+      toast.error("Failed to like/unlike post");
     }
-  }
+  };
+  
 
   const handleComment = async (postId: string) => {
     try {
@@ -228,7 +251,6 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 bg-black text-neon-green min-h-screen">
-      {/* Profile Info */}
      {/* Profile Info */}
 <motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
   <Card className="border-neon-green border-2 bg-black text-neon-green shadow-neon-green-glow rounded-lg">

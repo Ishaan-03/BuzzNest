@@ -177,68 +177,87 @@ router.get(
     })
   );
   
-  router.post("/update", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
-    const { postId, content } = req.body;
-    const userId = req.user?.id;
+
+
+router.post(
+  "/update/:postId",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { postId } = req.params;
+    const { content } = req.body; 
+    const userId = req.user?.id; 
+
+    if (!postId || !content) {
+      return res.status(400).json({ message: "Post ID and content are required" });
+    }
 
     const post = await prisma.post.findUnique({
-        where: {
-            id: postId
-        }
+      where: { id: postId },
     });
 
     if (!post) {
-        return res.status(404).send("Post not found");
+      return res.status(404).json({ message: "Post not found" });
     }
 
     if (post.userId !== userId) {
-        return res.status(403).json({ message: "You do not have permission to update this post" });
+      return res.status(403).json({ message: "You do not have permission to update this post" });
     }
 
     const updatedPost = await prisma.post.update({
-        where: {
-            id: postId
-        },
-        data: {
-            content
-        }
+      where: { id: postId },
+      data: { content },
     });
 
-    res.status(200).json({
-        message: "Post updated successfully",
-        post: updatedPost
+    return res.status(200).json({
+      message: "Post updated successfully",
+      post: updatedPost,
     });
-}));
-router.delete("/delete",authMiddleware, asyncHandler(async(req: Request ,res: Response)=> {
- try {
-   const {postId} = req.body; 
-   const userId = req.user?.id; 
- 
-   const post=  await prisma.post.findUnique({
-     where: {
-       id : postId
-     }
-   })
-   if(!post){
-     return res.status(404).send("Post not found");
-   }
-   if(post.userId !== userId){
-     return res.status(403).json({message: "You do not have permission to delete this post"});
-   }
-   const deletedPost = await prisma.post.delete({
-     where: {
-       id: postId
-     }
-   });
-   res.status(200).json({
-     message: "Post deleted successfully",
-     post: deletedPost
-   });
- } catch (error) {
-  console.error("error: ", Error)
-  return error
- }
-}))
+  })
+);
+
+
+
+router.delete(
+  "/delete/:postId",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.params; 
+      const userId = req.user?.id; 
+
+      const post = await prisma.post.findUnique({
+        where: {
+          id: postId,
+        },
+      });
+
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      if (post.userId !== userId) {
+        return res.status(403).json({
+          message: "You do not have permission to delete this post",
+        });
+      }
+
+      const deletedPost = await prisma.post.delete({
+        where: {
+          id: postId,
+        },
+      });
+
+      return res.status(200).json({
+        message: "Post deleted successfully",
+        post: deletedPost,
+      });
+    } catch (error) {
+      console.error("Error: ", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  })
+);
+
   
 
 router.post(
