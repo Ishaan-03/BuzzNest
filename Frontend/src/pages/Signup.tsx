@@ -1,31 +1,77 @@
 import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { signupUser } from '../services/authService'; 
+import { useNavigate } from 'react-router-dom'; 
 
-const SignupPage = () => {
+const SignupPage: React.FC = () => {
+  const [username, setUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  
+  const navigate = useNavigate(); 
+
+  const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const response = await signupUser(username, email, password);
+      setSuccessMessage(response.message);
+      navigate('/profile'); 
+    } catch (error: any) {
+      setErrorMessage(error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen w-screen flex justify-center items-center bg-black">
-      <div className="flex w-10/12 max-w-4xl shadow-lg rounded-lg overflow-hidden">
+      <div className="flex flex-col md:flex-row w-10/12 max-w-4xl shadow-lg rounded-lg overflow-hidden">
        
-        <div className="w-1/2 p-8 bg-white">
+        <div className="w-full md:w-1/2 p-6 md:p-8 bg-white">
           <h2 className="text-3xl font-bold text-gray-800">Create an account</h2>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account? <a href="/login" className="text-blue-500 hover:underline">Login</a>
           </p>
+
+          {errorMessage && <p className="mt-2 text-red-600">{errorMessage}</p>}
+          {successMessage && <p className="mt-2 text-green-600">{successMessage}</p>}
           
-         
-          <form className="mt-8 space-y-4">
+          <form className="mt-8 space-y-4" onSubmit={handleSignup}>
             <div>
               <label className="block text-sm font-medium text-gray-700">Username</label>
-              <input type="text" placeholder="Enter your username" className="w-full text-white bg-gray-600 mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full text-white bg-gray-600 mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Email</label>
-              <input type="email" placeholder="BuzzNest@example.com" className="w-full text-white bg-gray-600 mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input
+                type="email"
+                placeholder="BuzzNest@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full text-white bg-gray-600 mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Password</label>
-              <input type="password" placeholder="Enter your password" className="w-full text-white bg-gray-600 mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full text-white bg-gray-600 mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <motion.button 
+              type="submit"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="w-full py-3 mt-6 bg-black text-white rounded-lg hover:bg-gray-800"
@@ -36,7 +82,7 @@ const SignupPage = () => {
         </div>
 
         <motion.div 
-          className="w-1/2 bg-black flex justify-center items-center p-8"
+          className="w-full md:w-1/2 bg-black flex justify-center items-center p-6 md:p-8"
           initial={{ opacity: 0, x: 100 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}

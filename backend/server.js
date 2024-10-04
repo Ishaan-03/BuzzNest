@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
 const auth_routes_1 = __importDefault(require("./src/routes/auth-routes"));
 const post_routes_1 = __importDefault(require("./src/routes/post-routes"));
 const comments_1 = __importDefault(require("./src/routes/comments"));
@@ -11,7 +12,12 @@ const count_routes_1 = __importDefault(require("./src/routes/count-routes"));
 const follow_routes_1 = __importDefault(require("./src/routes/follow-routes"));
 const userSearch_route_1 = __importDefault(require("./src/routes/userSearch-route"));
 const app = (0, express_1.default)();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
+app.use((0, cors_1.default)({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+}));
 app.use(express_1.default.json());
 app.use(auth_routes_1.default);
 app.use(post_routes_1.default);

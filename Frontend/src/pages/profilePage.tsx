@@ -1,217 +1,335 @@
-import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Grid, Users, MessageSquare, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Avatar } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Heart, MessageCircle, Pencil, Trash2 } from "lucide-react"
+import axios from 'axios'
+import { toast } from "react-hot-toast"
 
-const user = {
-  username: "Ishaan Saxena",
-  followersCount: 1200,
-  followingCount: 3800,
-  postsCount: 42,
-};
-
-const posts = [
-  {
-    id: 1,
-    imageUrl: "https://i.pinimg.com/564x/23/6e/5a/236e5af3426b5e01ac1e6948712721a7.jpg",
-    content: "Beautiful sunset at the beach.",
-  },
-  {
-    id: 2,
-    imageUrl: "https://i.pinimg.com/564x/5e/d1/f1/5ed1f18c7164c84de81d95218dc9f72b.jpg",
-    content: "A glimpse of my digital art.",
-  },
-  {
-    id: 3,
-    imageUrl: "https://i.pinimg.com/564x/2b/3f/4c/2b3f4c4649b6e084fd0be8ce620a64a9.jpg",
-    content: "Exploring the beauty of nature.",
-  },
-  {
-    id: 4,
-    imageUrl: "https://i.pinimg.com/564x/3a/52/2c/3a522c27f27d96a0926b11d7a0ae0cde.jpg",
-    content: "Creating magic with colors.",
-  },
-  {
-    id: 5,
-    imageUrl: "https://i.pinimg.com/564x/8b/43/01/8b4301c5436adaf8224d92e8af0593b6.jpg",
-    content: "A moment of creativity.",
-  },
-  {
-    id: 6,
-    imageUrl: "https://i.pinimg.com/564x/de/7a/8e/de7a8ea5357306e38cf8eaa5db8343dd.jpg",
-    content: "Art is my escape.",
-  },
-  {
-    id: 7,
-    imageUrl: "https://i.pinimg.com/564x/8c/0a/60/8c0a606d504275bd3e7d1aafc8ccfcbd.jpg",
-    content: "Capturing life's beautiful moments.",
-  },
-];
-
-interface StatCardProps {
-  icon: React.ReactNode;
-  value: string | number;
-  label: string;
+interface User {
+  id: string
+  username: string
+  email: string
 }
 
-export default function UserProfile() {
-  const [selectedPost, setSelectedPost] = useState(null);
+interface Comment {
+  id: string
+  content: string
+  userId: string
+  createdAt: string
+  user: {
+    id: string
+    username: string
+    email: string
+  }
+}
 
-  const handlePostClick = (post: any) => {
-    setSelectedPost(post);
-  };
+interface Post {
+  id: string
+  content: string
+  imageUrl: string
+  videourl: string
+  createdAt: string
+  _count: {
+    likes: number
+  }
+  comments: Comment[]
+  liked?: boolean
+}
 
-  const closeModal = () => {
-    setSelectedPost(null);
-  };
+const api = axios.create({
+  baseURL: 'http://localhost:3000',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
+  }
+  return config
+}, (error) => {
+  return Promise.reject(error)
+})
+
+const useUserData = () => {
+  const [userData, setUserData] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get<{ user: User }>('/profile')
+        setUserData(response.data.user)
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        setError('Failed to fetch user data')
+        toast.error('Failed to fetch user data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  return { userData, loading, error }
+}
+
+const useUserStats = (userId: string | undefined) => {
+  const [stats, setStats] = useState({ postCount: 0, followersCount: 0, followingCount: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!userId) return
+      try {
+        const [postCountResponse, followersResponse] = await Promise.all([
+          api.get<{ postCount: number }>('/post-count'),
+          api.get<{ followersCount: number, followingCount: number }>(`/followers-following/${userId}`)
+        ])
+        setStats({
+          postCount: postCountResponse.data.postCount,
+          followersCount: followersResponse.data.followersCount,
+          followingCount: followersResponse.data.followingCount
+        })
+      } catch (error) {
+        console.error('Error fetching user stats:', error)
+        setError('Failed to fetch user stats')
+        toast.error('Failed to fetch user stats')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [userId])
+
+  return { stats, loading, error }
+}
+
+const useUserPosts = () => {
+  const [posts, setPosts] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await api.get<Post[]>('/posts/me')
+        setPosts(response.data)
+      } catch (error) {
+        console.error('Error fetching user posts:', error)
+        setError('Failed to fetch user posts')
+        toast.error('Failed to fetch user posts')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPosts()
+  }, [])
+
+  return { posts, setPosts, loading, error }
+}
+
+const ProfilePage: React.FC = () => {
+  const navigate = useNavigate()
+  const { userData, loading: userLoading, error: userError } = useUserData()
+  const { stats, loading: statsLoading, error: statsError } = useUserStats(userData?.id)
+  const { posts, setPosts, loading: postsLoading, error: postsError } = useUserPosts()
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [comment, setComment] = useState('')
+
+  useEffect(() => {
+    if (!userLoading && !userData) {
+      navigate('/login')
+    }
+  }, [userLoading, userData, navigate])
+
+  if (userLoading || statsLoading || postsLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>
+  }
+
+  if (userError || statsError || postsError) {
+    return <div className="flex justify-center items-center h-screen">An error occurred. Please try again later.</div>
+  }
+
+  if (!userData) {
+    return null
+  }
+
+  const handleLike = async (postId: string) => {
+    try {
+      await api.post(`/like/${postId}`)
+      const updatedPosts = posts.map(post => 
+        post.id === postId 
+          ? { ...post, _count: { ...post._count, likes: post._count.likes + 1 }, liked: !post.liked }
+          : post
+      )
+      setPosts(updatedPosts)
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({ ...selectedPost, _count: { ...selectedPost._count, likes: selectedPost._count.likes + 1 }, liked: !selectedPost.liked })
+      }
+      toast.success(selectedPost?.liked ? 'Post unliked successfully' : 'Post liked successfully')
+    } catch (error) {
+      console.error('Error liking/unliking post:', error)
+      toast.error('Failed to like/unlike post')
+    }
+  }
+
+  const handleComment = async (postId: string) => {
+    try {
+      await api.post('/comment', {
+        postId,
+        userId: userData.id,
+        content: comment
+      })
+      setComment('')
+      if (selectedPost) {
+        const updatedPost = { ...selectedPost }
+        updatedPost.comments = [...updatedPost.comments, { id: Date.now().toString(), content: comment, userId: userData.id, createdAt: new Date().toISOString(), user: userData }]
+        setSelectedPost(updatedPost)
+        const updatedPosts = posts.map(post => post.id === postId ? updatedPost : post)
+        setPosts(updatedPosts)
+      }
+      toast.success('Comment added successfully')
+    } catch (error) {
+      console.error('Error posting comment:', error)
+      toast.error('Failed to add comment')
+    }
+  }
+
+  const handleUpdate = (postId: string) => {
+    navigate(`/updatePost/${postId}`)
+  }
+
+  const handleDelete = async (postId: string) => {
+    try {
+      await api.delete(`/posts/${postId}`)
+      const updatedPosts = posts.filter(post => post.id !== postId)
+      setPosts(updatedPosts)
+      setSelectedPost(null)
+      toast.success('Post deleted successfully')
+    } catch (error) {
+      console.error('Error deleting post:', error)
+      toast.error('Failed to delete post')
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 overflow-hidden relative">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-purple-600 rounded-full filter blur-[100px] opacity-20"
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 4 }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-1/2 h-1/2 bg-cyan-400 rounded-full filter blur-[100px] opacity-20"
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 4 }}
-        />
-      </div>
-
-      <div className="max-w-2xl mx-auto space-y-8 relative z-10">
-        <motion.div
-          className="flex items-center space-x-6 bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-lg"
-          whileHover={{ scale: 1.05 }}
-        >
-          <Avatar className="w-28 h-28 border-4 border-purple-500 shadow-lg shadow-purple-500/50">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="@username" />
-            <AvatarFallback>UN</AvatarFallback>
+    <div className="container mx-auto p-4">
+      <Card className="mb-8">
+        <CardContent className="flex items-center space-x-4 p-6">
+          <Avatar className="h-24 w-24">
+            <img src="/placeholder-avatar.jpg" alt={userData.username} className="h-full w-full object-cover rounded-full" />
           </Avatar>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
-              @{user.username}
-            </h1>
-            <p className="text-gray-400 text-lg">Digital Artist & Web Developer</p>
+            <h1 className="text-2xl font-bold">{userData.username}</h1>
+            <p className="text-gray-500">{userData.email}</p>
+            <div className="flex space-x-4 mt-2">
+              <span>{stats.postCount} posts</span>
+              <span>{stats.followersCount} followers</span>
+              <span>{stats.followingCount} following</span>
+            </div>
           </div>
-        </motion.div>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-gray-900 border-gray-800 shadow-lg shadow-cyan-500/20">
-          <CardContent className="p-6">
-            <div className="flex justify-around text-center">
-              <StatCard
-                icon={<Grid className="w-12 h-12 text-cyan-400" />}
-                value={user.postsCount}
-                label="Posts"
+      <div className="grid grid-cols-3 gap-4">
+        {posts.map((post) => (
+          <Card key={post.id} className="cursor-pointer" onClick={() => setSelectedPost(post)}>
+            <CardContent className="p-0">
+              {post.videourl ? (
+                <video src={post.videourl} className="w-full h-48 object-cover" controls />
+              ) : (
+                <img src={post.imageUrl || '/placeholder.svg'} alt="Post" className="w-full h-48 object-cover" />
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={Boolean(selectedPost)} onOpenChange={() => setSelectedPost(null)}>
+        <DialogContent className="w-2/3 max-w-full mx-auto">
+          <DialogHeader>
+            <DialogTitle>
+              <div className="flex justify-between">
+                <span>Post Details</span>
+                <div className="flex space-x-4">
+                  <Button variant="ghost" onClick={() => handleUpdate(selectedPost?.id ?? '')}>
+                    <Pencil className="w-5 h-5" />
+                  </Button>
+                  <Button variant="ghost" onClick={() => handleDelete(selectedPost?.id ?? '')}>
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <CardContent>
+            {selectedPost?.videourl ? (
+              <video src={selectedPost.videourl} className="w-full h-64 object-cover" controls />
+            ) : (
+              <img src={selectedPost?.imageUrl || '/placeholder.svg'} alt="Post" className="w-full h-64 object-cover" />
+            )}
+
+            <div className="mt-4">
+              <p>{selectedPost?.content}</p>
+            </div>
+
+            <div className="flex justify-between items-center mt-4">
+              <div className="flex space-x-2 items-center">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleLike(selectedPost?.id ?? '')}
+                  className={selectedPost?.liked ? 'text-red-500' : ''}
+                >
+                  <Heart className="w-5 h-5" />
+                  <span>{selectedPost?._count.likes}</span>
+                </Button>
+                <Button variant="ghost">
+                  <MessageCircle className="w-5 h-5" />
+                  <span>{selectedPost?.comments.length}</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <h3 className="font-bold">Comments</h3>
+              <div className="space-y-4">
+                {selectedPost?.comments.map((comment) => (
+                  <div key={comment.id} className="p-2 bg-gray-100 rounded-lg">
+                    <p className="font-bold">{comment.user.username}</p>
+                    <p>{comment.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <Input
+                placeholder="Add a comment..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full"
               />
-              <StatCard
-                icon={<Users className="w-12 h-12 text-pink-400" />}
-                value={user.followersCount}
-                label="Followers"
-              />
-              <StatCard
-                icon={<MessageSquare className="w-12 h-12 text-yellow-400" />}
-                value={user.followingCount}
-                label="Following"
-              />
+              <Button onClick={() => handleComment(selectedPost?.id ?? '')} className="mt-2">
+                Post Comment
+              </Button>
             </div>
           </CardContent>
-        </Card>
-
-        <ScrollArea className="h-96 max-h-96 overflow-hidden border border-gray-700 rounded-lg">
-          <motion.div
-            className="grid grid-cols-3 gap-4"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { staggerChildren: 0.1 },
-              },
-            }}
-          >
-            {posts.map((post) => (
-              <motion.div
-                key={post.id}
-                className="aspect-square bg-gray-800 rounded-lg overflow-hidden shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-shadow duration-300"
-                whileHover={{ scale: 1.1 }}
-                onClick={() => handlePostClick(post)}
-              >
-                <img
-                  src={post.imageUrl}
-                  alt={`Post ${post.id}`}
-                  className="w-full h-full object-cover object-center" // Ensures the image is centered and not cropped
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        </ScrollArea>
-
-        <AnimatePresence>
-          {selectedPost && (
-            <PostModal post={selectedPost} closeModal={closeModal} />
-          )}
-        </AnimatePresence>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
+  )
 }
 
-function StatCard({ icon, value, label }: StatCardProps) {
-  return (
-    <motion.div
-      className="space-y-2 group"
-      whileHover={{ scale: 1.1 }}
-      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-    >
-      {icon}
-      <p className="text-3xl font-bold text-cyan-400">{value}</p>
-      <p className="text-sm text-gray-400">{label}</p>
-    </motion.div>
-  );
-}
-
-// Modal Component for Post
-function PostModal({ post, closeModal }: { post: any; closeModal: () => void }) {
-  return (
-    <motion.div
-      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-black p-6 rounded-lg shadow-xl border border-gray-700 max-w-lg w-full relative"
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.8 }}
-      >
-        <button onClick={closeModal} className="absolute top-2 right-2">
-          <X className="w-6 h-6 text-gray-400 hover:text-gray-200" />
-        </button>
-        <div className="space-y-4">
-          <img
-            src={post.imageUrl}
-            alt={`Post ${post.id}`}
-            className="w-full h-auto max-h-[70vh] object-contain rounded-lg" 
-          />
-          <p className="text-white text-lg">{post.content}</p> 
-          <div className="flex justify-between mt-4">
-            <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-              Update
-            </button>
-            <button className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">
-              Delete
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
+export default ProfilePage

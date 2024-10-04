@@ -1,5 +1,6 @@
 import express from "express";
-import authRoutes from  "./src/routes/auth-routes";
+import cors from "cors"
+import authRoutes from "./src/routes/auth-routes";
 import postRoutes from "./src/routes/post-routes";
 import commentRoutes from "./src/routes/comments";
 import countRoutes from "./src/routes/count-routes";
@@ -7,7 +8,13 @@ import followRoutes from "./src/routes/follow-routes";
 import userSearchRoutes from "./src/routes/userSearch-route";
 
 const app = express();
-const PORT = process.env.PORT 
+const PORT = process.env.PORT || 5000;
+
+app.use(cors({
+  origin: "http://localhost:5173", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true, 
+}));
 
 app.use(express.json());
 app.use(authRoutes); 

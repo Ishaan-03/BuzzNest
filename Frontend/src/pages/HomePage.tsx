@@ -1,3 +1,4 @@
+"use client"
 
 import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -107,9 +108,7 @@ export default function HomePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // Implement search functionality here
     console.log("Searching for:", searchQuery)
-    // Reset search state after search
     setSearchQuery("")
     setShowSearch(false)
   }
