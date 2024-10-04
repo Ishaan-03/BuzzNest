@@ -161,63 +161,70 @@ router.get("/posts", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandle
         res.status(500).json({ error: "Internal server error" });
     }
 })));
-router.post("/update", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/update/:postId", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const { postId, content } = req.body;
+    const { postId } = req.params;
+    const { content } = req.body;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!postId || !content) {
+        return res.status(400).json({ message: "Post ID and content are required" });
+    }
     const post = yield prisma.post.findUnique({
-        where: {
-            id: postId
-        }
+        where: { id: postId },
     });
     if (!post) {
-        return res.status(404).send("Post not found");
+        return res.status(404).json({ message: "Post not found" });
     }
     if (post.userId !== userId) {
         return res.status(403).json({ message: "You do not have permission to update this post" });
     }
     const updatedPost = yield prisma.post.update({
-        where: {
-            id: postId
-        },
-        data: {
-            content
-        }
+        where: { id: postId },
+        data: { content },
     });
-    res.status(200).json({
+    return res.status(200).json({
         message: "Post updated successfully",
-        post: updatedPost
+        post: updatedPost,
     });
 })));
-router.delete("/delete", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.delete("/delete/:postId", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const { postId } = req.body;
+        const { postId } = req.params;
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         const post = yield prisma.post.findUnique({
             where: {
-                id: postId
-            }
+                id: postId,
+            },
         });
         if (!post) {
-            return res.status(404).send("Post not found");
+            return res.status(404).json({ message: "Post not found" });
         }
         if (post.userId !== userId) {
-            return res.status(403).json({ message: "You do not have permission to delete this post" });
+            return res.status(403).json({
+                message: "You do not have permission to delete this post",
+            });
         }
+        // Delete all likes associated with the post
+        yield prisma.postLike.deleteMany({
+            where: {
+                postId: postId,
+            },
+        });
+        // Now delete the post
         const deletedPost = yield prisma.post.delete({
             where: {
-                id: postId
-            }
+                id: postId,
+            },
         });
-        res.status(200).json({
+        return res.status(200).json({
             message: "Post deleted successfully",
-            post: deletedPost
+            post: deletedPost,
         });
     }
     catch (error) {
-        console.error("error: ", Error);
-        return error;
+        console.error("Error: ", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 })));
 router.post('/post/:postId/like-unlike', auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -240,7 +247,11 @@ router.post('/post/:postId/like-unlike', auth_routes_1.authMiddleware, (0, auth_
                     id: existingLike.id,
                 },
             });
-            return res.status(200).json({ message: 'Post unliked.' });
+            const updatedPost = yield prisma.post.update({
+                where: { id: postId },
+                data: { likesCount: { decrement: 1 } },
+            });
+            return res.status(200).json({ message: 'Post unliked.', updatedPost });
         }
         else {
             yield prisma.postLike.create({
@@ -249,7 +260,11 @@ router.post('/post/:postId/like-unlike', auth_routes_1.authMiddleware, (0, auth_
                     userId: userId,
                 },
             });
-            return res.status(200).json({ message: 'Post liked.' });
+            const updatedPost = yield prisma.post.update({
+                where: { id: postId },
+                data: { likesCount: { increment: 1 } },
+            });
+            return res.status(200).json({ message: 'Post liked.', updatedPost });
         }
     }
     catch (error) {

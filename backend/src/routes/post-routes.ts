@@ -3,7 +3,7 @@ import multer from "multer";
 import express, { Request, Response, NextFunction } from "express";
 import { asyncHandler, authMiddleware } from "./auth-routes";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { PrismaClient } from "@prisma/client"; 
+import { Post, Prisma, PrismaClient } from "@prisma/client"; 
 
 const router = express.Router();
 const prisma = new PrismaClient(); 
@@ -241,6 +241,14 @@ router.delete(
         });
       }
 
+      // Delete all likes associated with the post
+      await prisma.postLike.deleteMany({
+        where: {
+          postId: postId,
+        },
+      });
+
+      // Now delete the post
       const deletedPost = await prisma.post.delete({
         where: {
           id: postId,
@@ -257,6 +265,7 @@ router.delete(
     }
   })
 );
+
 
   
 
@@ -285,7 +294,11 @@ router.post(
             id: existingLike.id,
           },
         });
-        return res.status(200).json({ message: 'Post unliked.' });
+        const updatedPost = await prisma.post.update({
+          where: { id: postId },
+          data: { likesCount: { decrement: 1 } }, 
+        });
+        return res.status(200).json({ message: 'Post unliked.', updatedPost });
       } else {
         await prisma.postLike.create({
           data: {
@@ -293,7 +306,11 @@ router.post(
             userId: userId,
           },
         });
-        return res.status(200).json({ message: 'Post liked.' });
+        const updatedPost = await prisma.post.update({
+          where: { id: postId },
+          data: { likesCount: { increment: 1 } }, 
+        });
+        return res.status(200).json({ message: 'Post liked.', updatedPost });
       }
     } catch (error) {
       console.error('Error liking/unliking post:', error);
@@ -301,7 +318,9 @@ router.post(
     }
   })
 );
-  
+
+
+
 
 export default router;
 

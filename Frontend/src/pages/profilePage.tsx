@@ -38,8 +38,10 @@ interface Post {
   _count: {
     likes: number
   }
+  likes: number
   comments: Comment[]
   liked?: boolean
+  likesCount: number
 }
 
 const api = axios.create({
@@ -170,17 +172,15 @@ const ProfilePage: React.FC = () => {
 
   const handleLike = async (postId: string) => {
     try {
-      await api.post(`/post/${postId}/like-unlike`);
+      const response = await api.post(`/post/${postId}/like-unlike`);
+      const updatedPostData = response.data.updatedPost;
   
       const updatedPosts = posts.map(post =>
         post.id === postId
-          ? {
-              ...post,
-              _count: {
-                ...post._count,
-                likes: post.liked ? post._count.likes - 1 : post._count.likes + 1,
-              },
-              liked: !post.liked, 
+          ? { 
+              ...post, 
+              likesCount: updatedPostData.likesCount,  // Update this to use likesCount
+              liked: !post.liked 
             }
           : post
       );
@@ -189,25 +189,20 @@ const ProfilePage: React.FC = () => {
       if (selectedPost && selectedPost.id === postId) {
         setSelectedPost({
           ...selectedPost,
-          _count: {
-            ...selectedPost._count,
-            likes: selectedPost.liked
-              ? selectedPost._count.likes - 1
-              : selectedPost._count.likes + 1,
-          },
-          liked: !selectedPost.liked, 
+          likesCount: updatedPostData.likesCount,  // Update this to use likesCount
+          liked: !selectedPost.liked,
         });
       }
   
-      const updatedPost = updatedPosts.find(post => post.id === postId);
-      if (updatedPost) {
-        toast.success(updatedPost.liked ? "Post liked successfully" : "Post unliked successfully");
-      }
+      toast.success(
+        selectedPost?.liked ? 'Post unliked successfully' : 'Post liked successfully'
+      );
     } catch (error) {
-      console.error("Error liking/unliking post:", error);
-      toast.error("Failed to like/unlike post");
+      console.error('Error liking/unliking post:', error);
+      toast.error('Failed to like/unlike post');
     }
   };
+  
   
 
   const handleComment = async (postId: string) => {
@@ -238,7 +233,7 @@ const ProfilePage: React.FC = () => {
 
   const handleDelete = async (postId: string) => {
     try {
-      await api.delete(`/posts/${postId}`)
+      await api.delete(`/delete/${postId}`)
       const updatedPosts = posts.filter(post => post.id !== postId)
       setPosts(updatedPosts)
       setSelectedPost(null)

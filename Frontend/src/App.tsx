@@ -16,11 +16,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/" element={<LandingPage />} />
-          <Route path="/learnmore" element={<LearnMore />} /> 
-          <Route path="/profile" element={<UserProfile />} /> 
-          <Route path="/home" element={<HomePage />} /> 
-          <Route path="/post" element={<CreatePost />} /> 
-          <Route path="/updatePost" element={<UpdatePost />} /> 
+          <Route path="/learnmore" element={<LearnMore />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/post" element={<CreatePost />} />
+          <Route path="/updatePost/:postId" element={<UpdatePost />} />
         </Routes>
       </div>
     </BrowserRouter>
