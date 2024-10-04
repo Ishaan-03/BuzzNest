@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Heart, MessageCircle, Zap, TrendingUp, Calendar, Music, Film, Send, Search, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { FaUserCircle } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 interface Post {
   id: number
@@ -112,7 +113,7 @@ export default function HomePage() {
     setSearchQuery("")
     setShowSearch(false)
   }
-
+ const navigate = useNavigate(); 
   return (
     <ScrollArea className="h-screen">
       <div className="min-h-screen bg-black text-white">
@@ -122,7 +123,7 @@ export default function HomePage() {
             whileHover={{ scale: 1.2 }}
             transition={{ duration: 0.3 }}
           >
-            <FaUserCircle className="w-8 h-8 text-cyan-400" />
+            <FaUserCircle onClick={()=> {navigate("/profile")}} className="w-8 h-8 text-cyan-400" />
           </motion.div>
           <div className="flex items-center space-x-2">
             <Zap className="w-6 h-6 text-yellow-400" />

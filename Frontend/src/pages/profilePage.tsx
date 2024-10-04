@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Heart, MessageCircle, Pencil, Trash2 } from "lucide-react"
+import { Grid, Heart, MessageCircle, Pencil, Trash2, Users } from "lucide-react"
 import axios from 'axios'
 import { toast } from "react-hot-toast"
+import { motion } from 'framer-motion'
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface User {
   id: string
@@ -155,11 +157,11 @@ const ProfilePage: React.FC = () => {
   }, [userLoading, userData, navigate])
 
   if (userLoading || statsLoading || postsLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>
+    return <div className="flex justify-center items-center h-screen text-neon-green">Loading...</div>
   }
 
   if (userError || statsError || postsError) {
-    return <div className="flex justify-center items-center h-screen">An error occurred. Please try again later.</div>
+    return <div className="flex justify-center items-center h-screen text-neon-red">An error occurred. Please try again later.</div>
   }
 
   if (!userData) {
@@ -225,107 +227,152 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <Card className="mb-8">
-        <CardContent className="flex items-center space-x-4 p-6">
-          <Avatar className="h-24 w-24">
-            <img src="/placeholder-avatar.jpg" alt={userData.username} className="h-full w-full object-cover rounded-full" />
-          </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold">{userData.username}</h1>
-            <p className="text-gray-500">{userData.email}</p>
-            <div className="flex space-x-4 mt-2">
-              <span>{stats.postCount} posts</span>
-              <span>{stats.followersCount} followers</span>
-              <span>{stats.followingCount} following</span>
+    <div className="container mx-auto p-4 bg-black text-neon-green min-h-screen">
+      {/* Profile Info */}
+     {/* Profile Info */}
+<motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+  <Card className="border-neon-green border-2 bg-black text-neon-green shadow-neon-green-glow rounded-lg">
+    <CardContent className="flex items-center space-x-4 p-6">
+      <div className="relative">
+        <Avatar className="w-24 h-24 bg-black border-neon-green border-2 shadow-neon-green-glow rounded-full">
+          (
+            <img src={"https://i.pinimg.com/736x/9a/27/d2/9a27d2611dd25e485e8805eb945bc760.jpg"} alt="Avatar" className="w-full h-full rounded-full" />
+          ) 
+        </Avatar>
+      </div>
+      <div>
+        <h1 className="text-3xl font-bold">{userData.username}</h1>
+        <div className="flex space-x-6 mt-2">
+          <div className="flex ">
+            <Grid className="w-5 h-5 text-neon-green" />
+            <div className="ml-2 text-center">
+              <span className="block text-gray-400">Posts</span>
+              <span className="text-neon-green font-semibold">{stats.postCount}</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-3 gap-4">
-        {posts.map((post) => (
-          <Card key={post.id} className="cursor-pointer" onClick={() => setSelectedPost(post)}>
-            <CardContent className="p-0">
-              {post.videourl ? (
-                <video src={post.videourl} className="w-full h-48 object-cover" controls />
-              ) : (
-                <img src={post.imageUrl || '/placeholder.svg'} alt="Post" className="w-full h-48 object-cover" />
-              )}
-            </CardContent>
-          </Card>
-        ))}
+          <div className="flex">
+            <Users className="w-5 h-5 text-neon-green" />
+            <div className="ml-2 text-center">
+              <span className="block text-gray-400">Followers</span>
+              <span className="text-neon-green font-semibold">{stats.followersCount}</span>
+            </div>
+          </div>
+          <div className="flex ">
+            <Users className="w-5 h-5 text-neon-green" />
+            <div className="ml-2 text-center">
+              <span className="block text-gray-400">Following</span>
+              <span className="text-neon-green font-semibold">{stats.followingCount}</span>
+            </div>
+          </div>
+        </div>
       </div>
+    </CardContent>
+  </Card>
+</motion.div>
 
-      <Dialog open={Boolean(selectedPost)} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="w-2/3 max-w-full mx-auto">
-          <DialogHeader>
-            <DialogTitle>
-              <div className="flex justify-between">
-                <span>Post Details</span>
-                <div className="flex space-x-4">
-                  <Button variant="ghost" onClick={() => handleUpdate(selectedPost?.id ?? '')}>
-                    <Pencil className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" onClick={() => handleDelete(selectedPost?.id ?? '')}>
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
+
+      {/* Posts */}
+      <ScrollArea className="max-h-screen overflow-y-scroll scrollbar scrollbar-thumb-neon-green scrollbar-track-black">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {posts.map((post) => (
+      <motion.div
+        key={post.id}
+        className="border-neon-green border-2 bg-black text-neon-green shadow-neon-green-glow rounded-lg"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setSelectedPost(post)}
+      >
+        <Card className="bg-black p-4 rounded-lg">
           <CardContent>
-            {selectedPost?.videourl ? (
-              <video src={selectedPost.videourl} className="w-full h-64 object-cover" controls />
-            ) : (
-              <img src={selectedPost?.imageUrl || '/placeholder.svg'} alt="Post" className="w-full h-64 object-cover" />
-            )}
-
-            <div className="mt-4">
-              <p>{selectedPost?.content}</p>
-            </div>
-
-            <div className="flex justify-between items-center mt-4">
-              <div className="flex space-x-2 items-center">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
                 <Button
-                  variant="ghost"
-                  onClick={() => handleLike(selectedPost?.id ?? '')}
-                  className={selectedPost?.liked ? 'text-red-500' : ''}
+                  variant="outline"
+                  className="bg-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLike(post.id);
+                  }}
                 >
-                  <Heart className="w-5 h-5" />
-                  <span>{selectedPost?._count.likes}</span>
+                  <Heart
+                    className={`w-4 h-4 ${post.liked ? 'text-red-500' : 'text-gray-400'}`}
+                  />
+                  <span className="text-neon-green">{post._count.likes}</span>
                 </Button>
-                <Button variant="ghost">
-                  <MessageCircle className="w-5 h-5" />
-                  <span>{selectedPost?.comments.length}</span>
+
+                <Button
+                  variant="outline"
+                  className="bg-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPost(post);
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 text-neon-green" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="bg-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUpdate(post.id);
+                  }}
+                >
+                  <Pencil className="w-4 h-4 text-neon-green" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="bg-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(post.id);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 text-neon-green" />
                 </Button>
               </div>
             </div>
-
-            <div className="mt-4">
-              <h3 className="font-bold">Comments</h3>
-              <div className="space-y-4">
-                {selectedPost?.comments.map((comment) => (
-                  <div key={comment.id} className="p-2 bg-gray-100 rounded-lg">
-                    <p className="font-bold">{comment.user.username}</p>
-                    <p>{comment.content}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <Input
-                placeholder="Add a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full"
-              />
-              <Button onClick={() => handleComment(selectedPost?.id ?? '')} className="mt-2">
-                Post Comment
-              </Button>
+            <div className="mt-2">
+              {post.imageUrl && <img src={post.imageUrl} alt="Post" className="w-full h-auto rounded-lg" />}
+              {post.videourl && (
+                <video controls className="w-full h-auto rounded-lg mt-2">
+                  <source src={post.videourl} type="video/mp4" />
+                </video>
+              )}
             </div>
           </CardContent>
+          <h2 className="text-xl text-white font-bold">{post.content}</h2>
+        </Card>
+      </motion.div>
+    ))}
+  </div>
+</ScrollArea>
+
+
+      {/* Comments Dialog */}
+      <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+        <DialogContent className="bg-black text-neon-green">
+          <DialogHeader>
+            <DialogTitle className="text-neon-green">{selectedPost?.content}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4">
+            <div className="h-64 overflow-y-scroll">
+              {selectedPost?.comments.map(comment => (
+                <div key={comment.id} className="border-b border-gray-700 py-2">
+                  <div className="font-bold">{comment.user.username}</div>
+                  <div>{comment.content}</div>
+                </div>
+              ))}
+            </div>
+            <Input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Add a comment..."
+              className="bg-gray-900 text-neon-green"
+            />
+            <Button onClick={() => handleComment(selectedPost!.id)} className="bg-neon-green text-black">Comment</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
