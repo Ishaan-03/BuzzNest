@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Grid, Heart, MessageCircle, Pencil, Trash2, Users } from "lucide-react"
+import { Grid, Heart, Loader, MessageCircle, Pencil, Trash2, Users } from "lucide-react"
 import axios from 'axios'
 import { toast } from "react-hot-toast"
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface User {
   id: string
@@ -159,11 +160,29 @@ const ProfilePage: React.FC = () => {
   }, [userLoading, userData, navigate])
 
   if (userLoading || statsLoading || postsLoading) {
-    return <div className="flex justify-center items-center h-screen text-neon-green">Loading...</div>
+    return (
+      <motion.div 
+        className="flex justify-center items-center h-screen text-neon-green"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <Loader/>
+      </motion.div>
+    )
   }
 
   if (userError || statsError || postsError) {
-    return <div className="flex justify-center items-center h-screen text-neon-red">An error occurred. Please try again later.</div>
+    return (
+      <motion.div 
+        className="flex justify-center items-center h-screen text-neon-red"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <div className="text-4xl">An error occurred. Please try again later.</div>
+      </motion.div>
+    )
   }
 
   if (!userData) {
@@ -172,38 +191,36 @@ const ProfilePage: React.FC = () => {
 
   const handleLike = async (postId: string) => {
     try {
-      const response = await api.post(`/post/${postId}/like-unlike`);
-      const updatedPostData = response.data.updatedPost;
-  
+      const response = await api.post(`/post/${postId}/like-unlike`)
+      const updatedPostData = response.data.updatedPost
+
       const updatedPosts = posts.map(post =>
         post.id === postId
           ? { 
               ...post, 
-              likesCount: updatedPostData.likesCount,  // Update this to use likesCount
+              likesCount: updatedPostData.likesCount,
               liked: !post.liked 
             }
           : post
-      );
-      setPosts(updatedPosts);
-  
+      )
+      setPosts(updatedPosts)
+
       if (selectedPost && selectedPost.id === postId) {
         setSelectedPost({
           ...selectedPost,
-          likesCount: updatedPostData.likesCount,  // Update this to use likesCount
+          likesCount: updatedPostData.likesCount,
           liked: !selectedPost.liked,
-        });
+        })
       }
-  
+
       toast.success(
         selectedPost?.liked ? 'Post unliked successfully' : 'Post liked successfully'
-      );
+      )
     } catch (error) {
-      console.error('Error liking/unliking post:', error);
-      toast.error('Failed to like/unlike post');
+      console.error('Error liking/unliking post:', error)
+      toast.error('Failed to like/unlike post')
     }
-  };
-  
-  
+  }
 
   const handleComment = async (postId: string) => {
     try {
@@ -245,154 +262,202 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 bg-black text-neon-green min-h-screen">
-     {/* Profile Info */}
-<motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-  <Card className="border-neon-green border-2 bg-black text-neon-green shadow-neon-green-glow rounded-lg">
-    <CardContent className="flex items-center space-x-4 p-6">
-      <div className="relative">
-        <Avatar className="w-24 h-24 bg-black border-neon-green border-2 shadow-neon-green-glow rounded-full">
-          (
-            <img src={"https://i.pinimg.com/736x/9a/27/d2/9a27d2611dd25e485e8805eb945bc760.jpg"} alt="Avatar" className="w-full h-full rounded-full" />
-          ) 
-        </Avatar>
-      </div>
-      <div>
-        <h1 className="text-3xl font-bold">{userData.username}</h1>
-        <div className="flex space-x-6 mt-2">
-          <div className="flex ">
-            <Grid className="w-5 h-5 text-neon-green" />
-            <div className="ml-2 text-center">
-              <span className="block text-gray-400">Posts</span>
-              <span className="text-neon-green font-semibold">{stats.postCount}</span>
-            </div>
-          </div>
-          <div className="flex">
-            <Users className="w-5 h-5 text-neon-green" />
-            <div className="ml-2 text-center">
-              <span className="block text-gray-400">Followers</span>
-              <span className="text-neon-green font-semibold">{stats.followersCount}</span>
-            </div>
-          </div>
-          <div className="flex ">
-            <Users className="w-5 h-5 text-neon-green" />
-            <div className="ml-2 text-center">
-              <span className="block text-gray-400">Following</span>
-              <span className="text-neon-green font-semibold">{stats.followingCount}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-</motion.div>
-
-
-      {/* Posts */}
-      <ScrollArea className="max-h-screen overflow-y-scroll scrollbar scrollbar-thumb-neon-green scrollbar-track-black">
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {posts.map((post) => (
-      <motion.div
-        key={post.id}
-        className="border-neon-green border-2 bg-black text-neon-green shadow-neon-green-glow rounded-lg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={() => setSelectedPost(post)}
-      >
-        <Card className="bg-black p-4 rounded-lg">
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  className="bg-black"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLike(post.id);
-                  }}
-                >
-                  <Heart
-                    className={`w-4 h-4 ${post.liked ? 'text-red-500' : 'text-gray-400'}`}
-                  />
-                  <span className="text-neon-green">{post._count.likes}</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="bg-black"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPost(post);
-                  }}
-                >
-                  <MessageCircle className="w-4 h-4 text-neon-green" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-black"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUpdate(post.id);
-                  }}
-                >
-                  <Pencil className="w-4 h-4 text-neon-green" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-black"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(post.id);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 text-neon-green" />
-                </Button>
-              </div>
-            </div>
-            <div className="mt-2">
-              {post.imageUrl && <img src={post.imageUrl} alt="Post" className="w-full h-auto rounded-lg" />}
-              {post.videourl && (
-                <video controls className="w-full h-auto rounded-lg mt-2">
-                  <source src={post.videourl} type="video/mp4" />
-                </video>
-              )}
-            </div>
-          </CardContent>
-          <h2 className="text-xl text-white font-bold">{post.content}</h2>
-        </Card>
-      </motion.div>
-    ))}
-  </div>
-</ScrollArea>
-
-
-      {/* Comments Dialog */}
-      <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="bg-black text-neon-green">
-          <DialogHeader>
-            <DialogTitle className="text-neon-green">{selectedPost?.content}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col space-y-4">
-            <div className="h-64 overflow-y-scroll">
-              {selectedPost?.comments.map(comment => (
-                <div key={comment.id} className="border-b border-gray-700 py-2">
-                  <div className="font-bold">{comment.user.username}</div>
-                  <div>{comment.content}</div>
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-black to-gray-900 text-neon-green p-4 md:p-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="container mx-auto">
+        {/* Profile Info */}
+        <motion.div 
+          className="mb-8"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-neon-green border-2 bg-black bg-opacity-50 text-neon-green shadow-neon-green-glow rounded-lg overflow-hidden">
+            <CardContent className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6">
+              <motion.div 
+                className="relative"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Avatar className="w-32 h-32 bg-black border-neon-green border-4 shadow-neon-green-glow rounded-full">
+                  <img src="https://i.pinimg.com/736x/9a/27/d2/9a27d2611dd25e485e8805eb945bc760.jpg" alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                </Avatar>
+              </motion.div>
+              <div className="text-center md:text-left">
+                <h1 className="text-4xl font-bold mb-4">{userData.username}</h1>
+                <div className="flex flex-wrap justify-center md:justify-start gap-6">
+                  <motion.div className="flex " whileHover={{ scale: 1.1 }}>
+                    <Grid className="w-6 h-6 text-neon-green mr-2" />
+                    <div className="text-center">
+                      <span className="block text-gray-400">Posts</span>
+                      <span className="text-neon-green font-semibold text-xl">{stats.postCount}</span>
+                    </div>
+                  </motion.div>
+                  <motion.div className="flex " whileHover={{ scale: 1.1 }}>
+                    <Users className="w-6 h-6 text-neon-green mr-2" />
+                    <div className="text-center">
+                      <span className="block text-gray-400">Followers</span>
+                      <span className="text-neon-green font-semibold text-xl">{stats.followersCount}</span>
+                    </div>
+                  </motion.div>
+                  <motion.div className="flex " whileHover={{ scale: 1.1 }}>
+                    <Users className="w-6 h-6 text-neon-green mr-2" />
+                    <div className="text-center">
+                      <span className="block text-gray-400">Following</span>
+                      <span className="text-neon-green font-semibold text-xl">{stats.followingCount}</span>
+                    </div>
+                  </motion.div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Posts */}
+        <ScrollArea className="h-[calc(100vh-300px)] overflow-y-auto pr-4">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, staggerChildren: 0.1 }}
+          >
+            <AnimatePresence>
+              {posts.map((post) => (
+                <motion.div
+                  key={post.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ scale: 1.05 }}
+                  className="border-neon-green border-2 bg-black bg-opacity-50 text-neon-green shadow-neon-green-glow rounded-lg overflow-hidden"
+                  onClick={() => setSelectedPost(post)}
+                >
+                  <Card className="bg-transparent p-4 rounded-lg">
+                    <CardContent>
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="bg-transparent border border-neon-green rounded-full p-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleLike(post.id)
+                            }}
+                          >
+                            <Heart
+                              className={`w-5 h-5 ${post.liked ? 'text-red-500' : 'text-gray-400'}`}
+                            />
+                          </motion.button>
+                          <span className="text-neon-green">{post._count.likes}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="bg-transparent border border-neon-green rounded-full p-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedPost(post)
+                            }}
+                          >
+                            <MessageCircle className="w-5 h-5 text-neon-green" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="bg-transparent border border-neon-green rounded-full p-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleUpdate(post.id)
+                            }}
+                          >
+                            <Pencil className="w-5 h-5 text-neon-green" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="bg-transparent border border-neon-green rounded-full p-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(post.id)
+                            }}
+                          >
+                            <Trash2 className="w-5 h-5 text-neon-green" />
+                          </motion.button>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        {post.imageUrl && (
+                          <img src={post.imageUrl} alt="Post" className="w-full h-48 object-cover rounded-lg mb-4" />
+                        )}
+                        {post.videourl && (
+                          <video controls className="w-full h-48 object-cover rounded-lg mb-4">
+                            <source src={post.videourl} type="video/mp4" />
+                          </video>
+                        )}
+                      </div>
+                      <h2 className="text-xl text-white font-bold line-clamp-2">{post.content}</h2>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
-            <Input
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment..."
-              className="bg-gray-900 text-neon-green"
-            />
-            <Button onClick={() => handleComment(selectedPost!.id)} className="bg-neon-green text-black">Comment</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+            </AnimatePresence>
+          </motion.div>
+        </ScrollArea>
+
+        {/* Comments Dialog */}
+        <AnimatePresence>
+          {selectedPost && (
+            <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+              <DialogContent className="bg-black bg-opacity-90 text-neon-green border-neon-green border-2 rounded-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-neon-green text-2xl mb-4">{selectedPost.content}</DialogTitle>
+                </DialogHeader>
+                <motion.div 
+                  className="flex flex-col space-y-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <ScrollArea className="h-64 overflow-y-auto pr-4">
+                    {selectedPost.comments.map(comment => (
+                      <motion.div 
+                        key={comment.id} 
+                        className="border-b border-gray-700 py-2"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <div className="font-bold text-neon-green">{comment.user.username}</div>
+                        <div className="text-gray-300">{comment.content}</div>
+                      </motion.div>
+                    ))}
+                  </ScrollArea>
+                  <Input
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="bg-gray-900 text-neon-green border-neon-green focus:ring-neon-green"
+                  />
+                  <Button 
+                    onClick={() => handleComment(selectedPost.id)} 
+                    className="bg-neon-green text-black hover:bg-neon-green-dark transition-colors duration-300"
+                  >
+                    Comment
+                  </Button>
+                </motion.div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
   )
 }
 

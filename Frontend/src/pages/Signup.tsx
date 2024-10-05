@@ -20,7 +20,7 @@ const SignupPage: React.FC = () => {
     try {
       const response = await signupUser(username, email, password);
       setSuccessMessage(response.message);
-      navigate('/profile'); 
+      navigate('/home'); 
     } catch (error: any) {
       setErrorMessage(error.message);
     }

@@ -1,119 +1,175 @@
-"use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Heart, MessageCircle, Zap, TrendingUp, Calendar, Music, Film, Send, Search, X } from "lucide-react"
+import { Heart, MessageCircle, Zap, TrendingUp, Calendar, Music, Film, Send, Search, X, Upload } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { FaUserCircle } from "react-icons/fa"
 import { useNavigate } from "react-router-dom"
+import axios from 'axios'
+import { toast } from "react-hot-toast"
 
-interface Post {
-  id: number
-  likes: number
-  isLiked: boolean
-  comments: Comment[]
-  showComments: boolean
+interface User {
+  id: string
+  username: string
+  email: string
+  isFollowing?: boolean
 }
 
 interface Comment {
-  id: number
-  username: string
+  id: string
   content: string
-  createdAt: Date
+  userId: string
+  createdAt: string
+  user: User
 }
 
-export default function HomePage() {
-  const [posts, setPosts] = useState<Post[]>(
-    Array.from({ length: 5 }, (_, i) => ({
-      id: i + 1,
-      likes: Math.floor(Math.random() * 100),
-      isLiked: false,
-      showComments: false,
-      comments: [
-        {
-          id: 1,
-          username: `User${Math.floor(Math.random() * 100)}`,
-          content: "Great post! Love the content.",
-          createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000))
-        },
-        {
-          id: 2,
-          username: `User${Math.floor(Math.random() * 100)}`,
-          content: "Thanks for sharing this!",
-          createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000))
-        }
-      ]
-    }))
-  )
+interface Post {
+  id: string
+  content: string
+  imageUrl: string | null
+  videourl: string | null
+  createdAt: string
+  user: User
+  _count: {
+    likes: number
+  }
+  comments: Comment[]
+  liked?: boolean
+  showComments?: boolean
+}
 
-  const [newComments, setNewComments] = useState<{ [key: number]: string }>({})
+const api = axios.create({
+  baseURL: 'http://localhost:3000',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
+  }
+  return config
+}, (error) => {
+  return Promise.reject(error)
+})
+
+export default function HomePage() {
+  const [posts, setPosts] = useState<Post[]>([])
+  const [newComments, setNewComments] = useState<{ [key: string]: string }>({})
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<User[]>([])
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const navigate = useNavigate()
 
-  const handleLike = (postId: number) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-              isLiked: !post.isLiked,
-            }
+  useEffect(() => {
+    fetchPosts()
+    fetchCurrentUser()
+  }, [])
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await api.get<User>('/profile')
+      setCurrentUser(response.data)
+    } catch (error) {
+      console.error('Error fetching current user:', error)
+      toast.error('Failed to fetch user profile')
+    }
+  }
+
+  const fetchPosts = async () => {
+    try {
+      const response = await api.get<Post[]>('/posts')
+      setPosts(response.data.map(post => ({ ...post, showComments: false })))
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+      toast.error('Failed to fetch posts')
+    }
+  }
+
+  const handleLike = async (postId: string) => {
+    try {
+      const response = await api.post(`/post/${postId}/like-unlike`)
+      const updatedPost = response.data.updatedPost
+      setPosts(prevPosts => prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, _count: { likes: updatedPost.likesCount }, liked: !post.liked }
           : post
-      )
-    )
+      ))
+      toast.success(response.data.message)
+    } catch (error) {
+      console.error('Error liking/unliking post:', error)
+      toast.error('Failed to like/unlike post')
+    }
   }
 
-  const toggleComments = (postId: number) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? { ...post, showComments: !post.showComments }
-          : post
-      )
-    )
+  const toggleComments = (postId: string) => {
+    setPosts(prevPosts => prevPosts.map(post => 
+      post.id === postId ? { ...post, showComments: !post.showComments } : post
+    ))
   }
 
-  const handleCommentChange = (postId: number, content: string) => {
-    setNewComments((prev) => ({ ...prev, [postId]: content }))
+  const handleCommentChange = (postId: string, content: string) => {
+    setNewComments(prev => ({ ...prev, [postId]: content }))
   }
 
-  const handleCommentSubmit = (postId: number) => {
+  const handleCommentSubmit = async (postId: string) => {
     if (!newComments[postId]?.trim()) return
 
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: [
-                ...post.comments,
-                {
-                  id: post.comments.length + 1,
-                  username: "CurrentUser",
-                  content: newComments[postId].trim(),
-                  createdAt: new Date()
-                }
-              ]
-            }
+    try {
+      const response = await api.post('/comment', {
+        postId,
+        content: newComments[postId].trim()
+      })
+      
+      setPosts(prevPosts => prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, comments: [...post.comments, response.data.comment] }
           : post
-      )
-    )
-    setNewComments((prev) => ({ ...prev, [postId]: "" }))
+      ))
+      setNewComments(prev => ({ ...prev, [postId]: '' }))
+      toast.success('Comment added successfully')
+    } catch (error) {
+      console.error('Error posting comment:', error)
+      toast.error('Failed to add comment')
+    }
   }
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Searching for:", searchQuery)
-    setSearchQuery("")
-    setShowSearch(false)
+    if (!searchQuery.trim()) return
+
+    try {
+      const response = await api.get<User[]>(`/search?query=${searchQuery}`)
+      setSearchResults(response.data)
+    } catch (error) {
+      console.error('Error searching users:', error)
+      toast.error('Failed to search users')
+    }
   }
- const navigate = useNavigate(); 
+
+  const handleFollow = async (userId: string) => {
+    try {
+      const response = await api.post(`/follow/${userId}`)
+      toast.success(response.data.message)
+      setSearchResults(prevResults => 
+        prevResults.map(user => 
+          user.id === userId ? { ...user, isFollowing: !user.isFollowing } : user
+        )
+      )
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error)
+      toast.error('Failed to follow/unfollow user')
+    }
+  }
+
   return (
     <ScrollArea className="h-screen">
       <div className="min-h-screen bg-black text-white">
@@ -123,20 +179,32 @@ export default function HomePage() {
             whileHover={{ scale: 1.2 }}
             transition={{ duration: 0.3 }}
           >
-            <FaUserCircle onClick={()=> {navigate("/profile")}} className="w-8 h-8 text-cyan-400" />
+            <FaUserCircle onClick={() => navigate("/profile")} className="w-8 h-8 text-cyan-400" />
           </motion.div>
           <div className="flex items-center space-x-2">
             <Zap className="w-6 h-6 text-yellow-400" />
-            <span className="text-xl font-bold text-yellow-400 animate-pulse">Ishaan Saxena</span>
+            <span className="text-xl font-bold text-yellow-400 animate-pulse">
+              BuzzNest
+            </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-12 h-12 rounded-full"
-            onClick={() => setShowSearch(true)}
-          >
-            <Search className="w-6 h-6 text-cyan-400" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-12 h-12 rounded-full"
+              onClick={() => navigate("/post")}
+            >
+              <Upload className="w-6 h-6 text-cyan-400" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-12 h-12 rounded-full"
+              onClick={() => setShowSearch(true)}
+            >
+              <Search className="w-6 h-6 text-cyan-400" />
+            </Button>
+          </div>
         </nav>
 
         <AnimatePresence>
@@ -172,6 +240,24 @@ export default function HomePage() {
                 >
                   <X className="w-6 h-6 bg-black" />
                 </Button>
+                {searchResults.length > 0 && (
+                  <div className="mt-4 bg-gray-900 rounded-lg p-4">
+                    {searchResults.map(user => (
+                      <div key={user.id} className="flex items-center justify-between py-2">
+                        <div>
+                          <p className="text-cyan-400">{user.username}</p>
+                          <p className="text-gray-400 text-sm">{user.email}</p>
+                        </div>
+                        <Button
+                          onClick={() => handleFollow(user.id)}
+                          className={user.isFollowing ? "bg-red-500 hover:bg-red-600" : "bg-purple-500 hover:bg-purple-600"}
+                        >
+                          {user.isFollowing ? 'Unfollow' : 'Follow'}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -196,26 +282,30 @@ export default function HomePage() {
                   <Card className="bg-transparent">
                     <CardHeader className="flex flex-row items-center gap-4 pb-2">
                       <Avatar>
-                        <AvatarImage src={`https://i.pinimg.com/736x/a1/e0/07/a1e0079cef2bdcb59eeeb436bf80a9ec.jpg?text=U${post.id}&background=random`} alt={`User ${post.id} avatar`} />
-                        <AvatarFallback>U{post.id}</AvatarFallback>
+                        <AvatarImage src={`https://i.pinimg.com/564x/45/e1/fd/45e1fd15b05a84174098254d21181410.jpg`} alt={`${post.user.username} avatar`} />
+                        <AvatarFallback>{post.user.username[0]}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-lg font-semibold text-cyan-400">User{post.id}</p>
-                        <p className="text-xs text-gray-400">2 hours ago</p>
+                        <p className="text-lg font-semibold text-cyan-400">{post.user.username}</p>
+                        <p className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleString()}</p>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="aspect-square w-full overflow-hidden rounded-lg border border-purple-500">
-                        <img
-                          src={`https://i.pinimg.com/736x/41/ba/c2/41bac2c45b603309032a3be7d36308b7.jpg?width=600&height=600&text=Post+${post.id}`}
-                          alt={`Post ${post.id}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <p className="text-sm text-gray-300">
-                        This is the content of post {post.id}. It's a beautiful day to share amazing moments with friends!
-                        #SocialLife #Memories
-                      </p>
+                      {post.imageUrl && (
+                        <div className="aspect-square w-full overflow-hidden rounded-lg border border-purple-500">
+                          <img
+                            src={post.imageUrl}
+                            alt={`Post by ${post.user.username}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {post.videourl && (
+                        <div className="aspect-video w-full overflow-hidden rounded-lg border border-purple-500">
+                          <video src={post.videourl} controls className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-300">{post.content}</p>
                     </CardContent>
                     <CardFooter className="flex flex-col items-start pt-2 space-y-4">
                       <div className="flex justify-between w-full">
@@ -223,23 +313,23 @@ export default function HomePage() {
                           <Button 
                             variant="ghost" 
                             className={`text-pink-500 hover:text-pink-400 hover:bg-pink-500/10 transition-all duration-300 ${
-                              post.isLiked ? 'text-red-500' : ''
+                              post.liked ? 'text-red-500' : ''
                             }`}
                             onClick={() => handleLike(post.id)}
                           >
-                            <Heart className={`w-5 h-5 mr-2 ${post.isLiked ? 'fill-current' : ''}`} />
+                            <Heart className={`w-5 h-5 mr-2 ${post.liked ? 'fill-current' : ''}`} />
                             <span className="font-semibold">Like</span>
                           </Button>
                           <AnimatePresence>
                             <motion.span
-                              key={post.likes}
+                              key={post._count.likes}
                               initial={{ opacity: 0, y: -10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: 10 }}
                               transition={{ duration: 0.3 }}
                               className="text-sm text-gray-400 mt-1"
                             >
-                              {post.likes} likes
+                              {post._count.likes} likes
                             </motion.span>
                           </AnimatePresence>
                         </div>
@@ -269,9 +359,9 @@ export default function HomePage() {
                                 <div key={comment.id} className="mb-4 last:mb-0">
                                   <div className="flex items-center space-x-2">
                                     <Avatar className="w-6 h-6">
-                                      <AvatarFallback>{comment.username[0]}</AvatarFallback>
+                                      <AvatarFallback>{comment.user.username[0]}</AvatarFallback>
                                     </Avatar>
-                                    <span className="font-medium text-cyan-400">{comment.username}</span>
+                                    <span className="font-medium text-cyan-400">{comment.user.username}</span>
                                     <span className="text-xs text-gray-400">
                                       {new Date(comment.createdAt).toLocaleString()}
                                     </span>
@@ -305,7 +395,7 @@ export default function HomePage() {
             </motion.div>
           </main>
 
-          {/* Right Sidebar - visible on lg screens and above, now with ScrollArea */}
+          {/* Right Sidebar - visible on lg screens and above */}
           <aside className="hidden lg:block w-1/3 sticky top-[72px] h-[calc(100vh-72px)]">
             <ScrollArea className="h-full pr-4">
               <div className="space-y-6 p-4 border-l border-purple-500">
@@ -317,7 +407,7 @@ export default function HomePage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {['#TechTalk', '#ArtisticVibes', '#FoodieFriday', '#FitnessFun', '#TravelDreams'].map((topic, index) => (
+                      {['#AIinMarketing', '#DiwaliVibes', '#MetaVerse', '#MentalHealthAwareness', '#CryptoGaming ','#ShareYourTravelDestinations'].map((topic, index) => (
                         <li key={index} className="text-gray-300 hover:text-white cursor-pointer transition-colors duration-200">
                           {topic}
                         </li>
@@ -333,11 +423,11 @@ export default function HomePage() {
                     </h2>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2">
-                      <li className="text-gray-300">Tech Meetup - June 15</li>
-                      <li className="text-gray-300">Art Exhibition - June 20</li>
-                      <li className="text-gray-300">Food Festival - June 25</li>
-                    </ul>
+                  <ul className="space-y-2">
+                  <li className="text-gray-300">Dua Lipa - Feeding India Concert - November 30, 2024</li>
+                  <li className="text-gray-300">Diljit Dosanjh - "Dil-Luminati" tour - Dates yet to be announced</li>
+                   <li className="text-gray-300">Karan Aujla - "It Was All a Dream" tour - Jaipur (December 29, 2024)</li>
+                  </ul>
                   </CardContent>
                 </Card>
 
@@ -349,9 +439,9 @@ export default function HomePage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      <li className="text-gray-300">1. "Neon Lights" - The Glow</li>
-                      <li className="text-gray-300">2. "Midnight Drive" - Luna</li>
-                      <li className="text-gray-300">3. "Electric Dreams" - Synth Wave</li>
+                      <li className="text-gray-300">1. "Shit Talk" by Karan Aujla:</li>
+                      <li className="text-gray-300">2. "Lover" by Diljit Dosanjh</li>
+                      <li className="text-gray-300">3. "Espresso" by Sabrina Carpenter</li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -364,9 +454,9 @@ export default function HomePage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      <li className="text-gray-300">1. "Neon Noir"</li>
-                      <li className="text-gray-300">2. "Cyber City"</li>
-                      <li className="text-gray-300">3. "Digital Dreamscape"</li>
+                      <li className="text-gray-300">1. 3 Idiots (2009)</li>
+                      <li className="text-gray-300">2. Zindagi Na Milegi Dobara (2011)</li>
+                      <li className="text-gray-300">3. The Shawshank Redemption (1994)</li>
                     </ul>
                   </CardContent>
                 </Card>
