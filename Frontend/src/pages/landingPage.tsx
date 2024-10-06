@@ -1,122 +1,136 @@
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const LandingPage = () => {
-  const [showMergedImages, setShowMergedImages] = useState(false);
-  const navigate = useNavigate();
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+const neonColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff9900']
+
+const FloatingElement: React.FC<{ delay: number }> = ({ delay }) => {
+  const randomColor = neonColors[Math.floor(Math.random() * neonColors.length)]
+  return (
+    <motion.div
+      className="absolute rounded-full mix-blend-screen"
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{
+        opacity: [0.2, 0.5, 0.2],
+        scale: [1, 1.5, 1],
+        x: ['-50%', '50%', '-50%'],
+        y: ['-50%', '50%', '-50%'],
+      }}
+      transition={{
+        duration: 10,
+        repeat: Infinity,
+        repeatType: 'reverse',
+        ease: 'easeInOut',
+        delay: delay,
+      }}
+      style={{
+        width: `${Math.random() * 100 + 50}px`,
+        height: `${Math.random() * 100 + 50}px`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        backgroundColor: randomColor,
+        filter: 'blur(50px)',
+      }}
+    />
+  )
+}
+
+const NeonText: React.FC<{ text: string; delay: number; color: string }> = ({ text, delay, color }) => {
+  return (
+    <motion.span
+      className="inline-block"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      style={{ color: color }}
+    >
+      {text}
+    </motion.span>
+  )
+}
+
+const LandingPage: React.FC = () => {
+  const [showContent, setShowContent] = useState(false)
+  const Navigate = useNavigate()
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowMergedImages(true);
-    }, 1000); 
+    const timer = setTimeout(() => setShowContent(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
 
-    return () => clearTimeout(timer); 
-  }, []);
-
-  const handleGetStarted = () => {
-    navigate('/signup'); // Redirect to the signup page
-  };
+  const handleGetStarted = () => Navigate('/signup')
+  const handleLearnMore = () => Navigate('/learnmore')
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-black relative overflow-hidden">
-      {showMergedImages ? (
-        <div className="absolute inset-0 w-full h-full flex">
-          {/* First Image */}
-          <motion.div
-            className="w-1/2 h-full"
-            initial={{ opacity: 0, x: -100 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1.2, delay: 0.2 }}
-          >
-            <img
-              src="https://images.pexels.com/photos/28577587/pexels-photo-28577587/free-photo-of-capturing-sunset-silhouette-with-smartphone.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-              alt="Background 2"
-              className="object-cover w-full h-full opacity-60"
-            />
-          </motion.div>
-
-          {/* Second Image */}
-          <motion.div
-            className="w-1/2 h-full"
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1.2, delay: 0.4 }}
-          >
-            <img
-              src="https://images.pexels.com/photos/3974405/pexels-photo-3974405.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-              alt="Background 3"
-              className="object-cover w-full h-full opacity-60"
-            />
-          </motion.div>
-
-          {/* Dark overlay */}
-          <div className="absolute inset-0 bg-black opacity-60"></div>
-        </div>
-      ) : (
-        // Initial image display
-        <motion.div
-          className="absolute inset-0 w-full h-full flex items-center justify-center"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 1 }}
-        >
-          <img
-            src="https://images.pexels.com/photos/28589286/pexels-photo-28589286/free-photo-of-wet-dog-in-forest-stream-adventure.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-            alt="Initial Background"
-            className="object-cover w-full h-full"
-          />
-        </motion.div>
-      )}
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-black relative overflow-hidden">
+      {/* Animated background elements */}
+      {[...Array(10)].map((_, index) => (
+        <FloatingElement key={index} delay={index * 0.5} />
+      ))}
 
       {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center text-center space-y-8 p-6">
-        <motion.h1
-          className="text-5xl md:text-6xl font-bold text-white"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-        >
-          Welcome to <span className="text-blue-500">BuzzNest</span>
-        </motion.h1>
-
-        <motion.p
-          className="text-xl md:text-2xl text-gray-200"
-          initial={{ x: -200, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
-        >
-          "Create your own hive of connections, share your story, and experience the buzz of life."
-        </motion.p>
-
-        <motion.div
-          className="mt-8 flex space-x-4"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-        >
-          <button 
-            onClick={handleGetStarted} // Add click event to redirect
-            className="py-3 px-6 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-all"
+      <AnimatePresence>
+        {showContent && (
+          <motion.div
+            className="relative z-10 flex flex-col items-center text-center space-y-8 p-6 max-w-4xl"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 1 }}
           >
-            Get Started
-          </button>
-          <button onClick={() => navigate('/learnmore')} className="py-3 px-6 bg-gray-800 text-white rounded-lg shadow-lg hover:bg-gray-700 transition-all">
-            Learn More
-          </button>
-        </motion.div>
+            <h1 className="text-5xl md:text-7xl font-bold space-y-2">
+              <NeonText text="Welcome to" delay={0.2} color="#8A2BE2" />
+              <br />
+              <NeonText text="Buzz" delay={0.4} color="#00FF00" />
+              <NeonText text="Nest" delay={0.6} color="#1E90FF" />
+            </h1>
 
-        <motion.p
-          className="text-sm md:text-md text-gray-300 mt-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, delay: 1.5 }}
-        >
-          "Together we thrive. BuzzNest - Where your stories find their place."
-        </motion.p>
-      </div>
+            <motion.p
+              className="text-xl md:text-2xl text-gray-300"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              Create your own hive of connections, share your story, and experience the buzz of life.
+            </motion.p>
+
+            <motion.div
+              className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mt-8"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              <motion.button
+                onClick={handleGetStarted}
+                className="py-3 px-6 bg-[#ff00ff] text-white rounded-full shadow-lg hover:bg-[#ff33ff] transition-all text-lg font-semibold"
+                whileHover={{ scale: 1.05, boxShadow: '0 0 15px #ff00ff' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Get Started
+              </motion.button>
+              <motion.button
+                onClick={handleLearnMore}
+                className="py-3 px-6 bg-[#00ffff] text-black rounded-full shadow-lg hover:bg-[#33ffff] transition-all text-lg font-semibold"
+                whileHover={{ scale: 1.05, boxShadow: '0 0 15px #00ffff' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Learn More
+              </motion.button>
+            </motion.div>
+
+            <motion.p
+              className="text-sm md:text-lg text-gray-400 mt-12 italic"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 1 }}
+            >
+              &quot;Together we thrive. BuzzNest - Where your stories find their place.&quot;
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-  );
-};
+  )
+}
 
-export default LandingPage;
+export default LandingPage

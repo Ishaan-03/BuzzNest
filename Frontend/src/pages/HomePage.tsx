@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -14,6 +13,7 @@ import axios from 'axios'
 import { toast } from "react-hot-toast"
 
 interface User {
+  avatarUrl: undefined
   id: string
   username: string
   email: string
@@ -29,6 +29,8 @@ interface Comment {
 }
 
 interface Post {
+  message(message: any): unknown
+  updatedPost: any
   id: string
   content: string
   imageUrl: string | null
@@ -96,19 +98,20 @@ export default function HomePage() {
 
   const handleLike = async (postId: string) => {
     try {
-      const response = await api.post(`/post/${postId}/like-unlike`)
+      const response = await api.post<Post>(`/post/${postId}/like-unlike`)
       const updatedPost = response.data.updatedPost
       setPosts(prevPosts => prevPosts.map(post => 
         post.id === postId 
-          ? { ...post, _count: { likes: updatedPost.likesCount }, liked: !post.liked }
+          ? { ...post, _count: { ...post._count, likes: updatedPost._count.likes }, liked: !post.liked }
           : post
       ))
-      toast.success(response.data.message)
+      
     } catch (error) {
       console.error('Error liking/unliking post:', error)
       toast.error('Failed to like/unlike post')
     }
   }
+
 
   const toggleComments = (postId: string) => {
     setPosts(prevPosts => prevPosts.map(post => 
@@ -117,30 +120,42 @@ export default function HomePage() {
   }
 
   const handleCommentChange = (postId: string, content: string) => {
-    setNewComments(prev => ({ ...prev, [postId]: content }))
-  }
+    setNewComments(prev => ({ ...prev, [postId]: content }));
+}
 
-  const handleCommentSubmit = async (postId: string) => {
-    if (!newComments[postId]?.trim()) return
+const handleComment = async (postId: string) => {
+    const trimmedContent = newComments[postId]?.trim();
+    if (!trimmedContent) return;
 
     try {
-      const response = await api.post('/comment', {
-        postId,
-        content: newComments[postId].trim()
-      })
-      
-      setPosts(prevPosts => prevPosts.map(post => 
-        post.id === postId 
-          ? { ...post, comments: [...post.comments, response.data.comment] }
-          : post
-      ))
-      setNewComments(prev => ({ ...prev, [postId]: '' }))
-      toast.success('Comment added successfully')
+        // Update the API endpoint to include the postId in the URL
+        const response = await api.post(`/comments/${postId}`, {
+            content: trimmedContent
+        });
+
+        // Assuming the response returns the newly created comment
+        const newComment = response.data;
+
+        setPosts(prevPosts => prevPosts.map(post => 
+            post.id === postId 
+                ? { 
+                    ...post, 
+                    comments: [
+                        ...post.comments, 
+                        newComment
+                    ]
+                }
+                : post
+        ));
+
+        // Clear the comment input after posting
+        setNewComments(prev => ({ ...prev, [postId]: '' }));
+        toast.success('Comment added successfully');
     } catch (error) {
-      console.error('Error posting comment:', error)
-      toast.error('Failed to add comment')
+        console.error('Error posting comment:', error);
+        toast.error('Failed to add comment');
     }
-  }
+}
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -282,7 +297,7 @@ export default function HomePage() {
                   <Card className="bg-transparent">
                     <CardHeader className="flex flex-row items-center gap-4 pb-2">
                       <Avatar>
-                        <AvatarImage src={`https://i.pinimg.com/564x/45/e1/fd/45e1fd15b05a84174098254d21181410.jpg`} alt={`${post.user.username} avatar`} />
+                        <AvatarImage src={post.user.avatarUrl || undefined} alt={`${post.user.username} avatar`} />
                         <AvatarFallback>{post.user.username[0]}</AvatarFallback>
                       </Avatar>
                       <div>
@@ -378,7 +393,7 @@ export default function HomePage() {
                                 className="flex-grow bg-gray-800 border-purple-500 text-white"
                               />
                               <Button
-                                onClick={() => handleCommentSubmit(post.id)}
+                                onClick={() => handleComment(post.id)}
                                 className="bg-purple-500 hover:bg-purple-600"
                               >
                                 <Send className="w-4 h-4 mr-2" />

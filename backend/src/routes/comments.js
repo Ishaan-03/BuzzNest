@@ -24,25 +24,58 @@ const commentValidation = zod_1.default.object({
     content: zod_1.default.string(),
 });
 // post route to post comments
-router.post("/comment", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const body = req.body;
-    const result = commentValidation.safeParse(body);
-    if (!result.success) {
-        const { errors } = result.error;
-        return res.status(400).json({
-            message: "Validation error",
-            errors,
-        });
+router.post('/comments/:postId', auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { content } = req.body;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const { postId } = req.params;
+    if (!userId) {
+        return res.status(401).json({ error: 'User is not authenticated' });
     }
-    const { postId, userId, content } = result.data;
-    const comment = yield prisma.comment.create({
-        data: {
-            postId,
-            userId,
-            content,
-        },
-    });
-    res.status(200).json({ message: "Comment saved successfully", comment });
+    const input = commentValidation.safeParse({ postId, userId, content });
+    if (!input.success) {
+        return res.status(400).json({ error: "Invalid input", issues: input.error.issues });
+    }
+    try {
+        const newComment = yield prisma.comment.create({
+            data: {
+                postId,
+                userId,
+                content,
+            },
+        });
+        res.status(201).json(newComment);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create comment' });
+    }
+})));
+router.post('/comments', auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { postId, content } = req.body;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    // Validate input
+    if (!postId || !content) {
+        return res.status(400).json({ error: 'Post ID and content are required' });
+    }
+    if (!userId) {
+        return res.status(401).json({ error: 'User is not authenticated' });
+    }
+    try {
+        const newComment = yield prisma.comment.create({
+            data: {
+                postId,
+                userId,
+                content,
+            },
+        });
+        res.status(201).json(newComment);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create comment' });
+    }
 })));
 // GET route to fetch comments 
 router.get("/getcomments", auth_routes_1.authMiddleware, (0, auth_routes_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

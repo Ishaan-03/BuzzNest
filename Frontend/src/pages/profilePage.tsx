@@ -224,7 +224,7 @@ const ProfilePage: React.FC = () => {
 
   const handleComment = async (postId: string) => {
     try {
-      await api.post('/comment', {
+      await api.post('/comments', {
         postId,
         userId: userData.id,
         content: comment
