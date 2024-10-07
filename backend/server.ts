@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors"
+import cors from "cors";
 import authRoutes from "./src/routes/auth-routes";
 import postRoutes from "./src/routes/post-routes";
 import commentRoutes from "./src/routes/comments";
@@ -11,13 +11,24 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ["https://buzz-nest-ishaan-03s-projects.vercel.app", "http://localhost:3000"],
+  origin: [
+    "https://buzz-nest-ishaan-03s-projects.vercel.app",  
+    "http://localhost:5173"   
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true, 
 }));
 
+app.use((req, res, next) => {
+  console.log(`Received request: ${req.method} ${req.url}`);
+  console.log(`Origin: ${req.headers.origin}`);
+  next();
+});
 
-app.use(express.json());
+app.options('*', cors()); 
+
+app.use(express.json()); 
+
 app.use(authRoutes); 
 app.use(postRoutes);
 app.use(commentRoutes);
