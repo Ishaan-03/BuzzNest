@@ -79,14 +79,14 @@ export default function CreatePost() {
     formData.append('content', content);
 
     try {
-      const response = await axios.post('http://localhost:3000/upload', formData, {
+      const response = await axios.post('https://buzznest-thmn.onrender.com/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
-      toast.success('Post created successfully!');
+      toast.success('Post created successfully!',response.data);
       setSelectedFile(null);
       setContent("");
       setMediaType("image");

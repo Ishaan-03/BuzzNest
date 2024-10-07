@@ -10,7 +10,6 @@ import axios from 'axios'
 import { toast } from "react-hot-toast"
 import { motion, AnimatePresence } from 'framer-motion'
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from '@/components/ui/skeleton'
 
 interface User {
   id: string
@@ -46,7 +45,7 @@ interface Post {
 }
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'https://buzznest-thmn.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },

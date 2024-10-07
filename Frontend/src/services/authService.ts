@@ -1,5 +1,5 @@
 
-const API_URL = "http://localhost:3000"; 
+const API_URL = "https://buzznest-thmn.onrender.com"; 
 
 interface SignupResponse {
   message: string;

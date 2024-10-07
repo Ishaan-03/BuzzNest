@@ -45,7 +45,7 @@ interface Post {
 }
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'https://buzznest-thmn.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -110,7 +110,7 @@ export default function HomePage() {
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<User[]>([])
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [, setCurrentUser] = useState<User | null>(null)
   const navigate = useNavigate()
 
   const fetchPosts = useCallback(async () => {

@@ -76,7 +76,7 @@ export default function UpdatePost() {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`http://localhost:3000/update/${postId}`, 
+      const response = await axios.post(`https://buzznest-thmn.onrender.com/update/${postId}`, 
         { content: postContent },
         {
           headers: {
@@ -86,7 +86,7 @@ export default function UpdatePost() {
         }
       )
 
-      toast.success('Post updated successfully')
+      toast.success('Post updated successfully',response.data)
       navigate('/profile')  // Redirect to home page after successful update
     } catch (error) {
       console.error('Error updating post:', error)
