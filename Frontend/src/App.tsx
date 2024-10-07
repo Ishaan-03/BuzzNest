@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/login";
 import SignupPage from "./pages/Signup"; 
-import HomePage from "./pages/homePage"; 
 import LearnMore from "./pages/Learnmore";
 import UserProfile from "./pages/profilePage";
 import CreatePost from "./pages/Createpost";
 import LandingPage from "./pages/landingPage";
 import UpdatePost from "./pages/updatePost";
+import HomePage from "./pages/homePage.tsx";
 
 function App() {
   return (
