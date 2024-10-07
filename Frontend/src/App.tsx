@@ -7,6 +7,8 @@ import CreatePost from "./pages/Createpost";
 import LandingPage from "./pages/landingPage";
 import UpdatePost from "./pages/updatePost";
 import HomePage from "./pages/homePage";
+
+
 function App() {
   return (
     <BrowserRouter>
