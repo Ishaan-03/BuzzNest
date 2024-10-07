@@ -6,7 +6,7 @@ import UserProfile from "./pages/profilePage";
 import CreatePost from "./pages/Createpost";
 import LandingPage from "./pages/landingPage";
 import UpdatePost from "./pages/updatePost";
-import HomePage from "./pages/homePage";
+import HomePage from  "./pages/HomePage"
 
 
 function App() {
