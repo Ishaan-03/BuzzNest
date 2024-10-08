@@ -10,13 +10,23 @@ import userSearchRoutes from "./src/routes/userSearch-route";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  "https://buzz-nest-ishaan-03s-projects.vercel.app",
+  "https://buzz-nest.vercel.app", 
+  "http://localhost:5173"
+];
+
 app.use(cors({
-  origin: [
-    "https://buzz-nest-ishaan-03s-projects.vercel.app",  
-    "http://localhost:5173"   
-  ],
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true, 
+  credentials: true,
 }));
 
 app.use((req, res, next) => {
