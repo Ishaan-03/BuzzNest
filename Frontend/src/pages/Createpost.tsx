@@ -79,7 +79,7 @@ export default function CreatePost() {
     formData.append('content', content);
 
     try {
-      const response = await axios.post('https://buzz-nest-backend.vercel.app/upload', formData, {
+      const response = await axios.post('https://buzznest-nbvy.onrender.com/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
