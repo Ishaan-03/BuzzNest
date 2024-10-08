@@ -50,7 +50,7 @@ export default function UpdatePost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/posts/${postId}`, {
+        const response = await axios.get(`https://buzz-nest-backend.vercel.app/posts/${postId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
@@ -76,7 +76,7 @@ export default function UpdatePost() {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`https://buzznest-thmn.onrender.com/update/${postId}`, 
+      const response = await axios.post(`https://buzz-nest-backend.vercel.app/update/${postId}`, 
         { content: postContent },
         {
           headers: {

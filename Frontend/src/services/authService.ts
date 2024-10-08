@@ -1,5 +1,5 @@
 
-const API_URL = "https://buzznest-thmn.onrender.com"; 
+const API_URL = "https://buzz-nest-backend.vercel.app"; 
 
 interface SignupResponse {
   message: string;

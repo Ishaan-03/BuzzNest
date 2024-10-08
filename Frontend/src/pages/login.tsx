@@ -14,7 +14,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const response = await axios.post('https://buzznest-thmn.onrender.com/login', { email, password });
+      const response = await axios.post('https://buzz-nest-backend.vercel.app/login', { email, password });
       localStorage.setItem('token', response.data.token);
       navigate('/home');
     } catch (err) {

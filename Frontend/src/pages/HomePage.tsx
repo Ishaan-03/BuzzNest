@@ -45,7 +45,7 @@ interface Post {
 }
 
 const api = axios.create({
-  baseURL: 'https://buzznest-thmn.onrender.com',
+  baseURL: 'https://buzz-nest-backend.vercel.app',
   headers: {
     'Content-Type': 'application/json',
   },
