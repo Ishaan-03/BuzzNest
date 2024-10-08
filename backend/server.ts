@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
   "https://buzz-nest.vercel.app",
-  "https://buzznest-thmn.onrender.com",
+  "https://buzz-nest-ishaan-03s-projects.vercel.app",
   "http://localhost:5173"
 ];
 
