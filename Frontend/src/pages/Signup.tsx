@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { signupUser } from '../services/authService'; 
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 
 const SignupPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
@@ -10,7 +10,7 @@ const SignupPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -18,22 +18,31 @@ const SignupPage: React.FC = () => {
     setSuccessMessage('');
 
     try {
-      const response = await signupUser(username, email, password);
-      setSuccessMessage(response.message);
-      navigate('/home'); 
+      const response = await axios.post('https://buzznest-nbvy.onrender.com/signup', {
+        username,
+        email,
+        password
+      });
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        setSuccessMessage('Signup successful!');
+        navigate('/home');
+      } else {
+        throw new Error('No token received from server');
+      }
     } catch (error: any) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.response?.data?.message || 'An error occurred during signup');
     }
   };
 
   return (
     <div className="min-h-screen w-screen flex justify-center items-center bg-black">
       <div className="flex flex-col md:flex-row w-10/12 max-w-4xl shadow-lg rounded-lg overflow-hidden">
-       
         <div className="w-full md:w-1/2 p-6 md:p-8 bg-white">
           <h2 className="text-3xl font-bold text-gray-800">Create an account</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Already have an account? <a href="/login" className="text-blue-500 hover:underline">Login</a>
+            Already have an account? <Link to="/login" className="text-blue-500 hover:underline">Login</Link>
           </p>
 
           {errorMessage && <p className="mt-2 text-red-600">{errorMessage}</p>}
