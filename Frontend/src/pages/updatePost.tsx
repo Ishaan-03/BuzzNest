@@ -50,7 +50,7 @@ export default function UpdatePost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`http://15.207.107.166:3000/posts/${postId}`, {
+        const response = await axios.get(`https://buzznest-nbvy.onrender.com/posts/${postId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
@@ -76,7 +76,7 @@ export default function UpdatePost() {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`http://15.207.107.166:3000/update/${postId}`, 
+      const response = await axios.post(`https://buzznest-nbvy.onrender.com/update/${postId}`, 
         { content: postContent },
         {
           headers: {

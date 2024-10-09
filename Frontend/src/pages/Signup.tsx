@@ -18,7 +18,7 @@ const SignupPage: React.FC = () => {
     setSuccessMessage('');
 
     try {
-      const response = await axios.post('http://15.207.107.166:3000/signup', {
+      const response = await axios.post('https://buzznest-nbvy.onrender.com/signup', {
         username,
         email,
         password

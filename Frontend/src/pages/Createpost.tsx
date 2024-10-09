@@ -79,7 +79,7 @@ export default function CreatePost() {
     formData.append('content', content);
 
     try {
-      const response = await axios.post('http://15.207.107.166:3000/upload', formData, {
+      const response = await axios.post('https://buzznest-nbvy.onrender.com/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
