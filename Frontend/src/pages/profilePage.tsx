@@ -45,7 +45,7 @@ interface Post {
 }
 
 const api = axios.create({
-  baseURL: 'https://buzznest-nbvy.onrender.com',
+  baseURL: 'http://15.207.107.166:3000',
   headers: {
     'Content-Type': 'application/json',
   },
